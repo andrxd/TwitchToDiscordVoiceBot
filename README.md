@@ -39,10 +39,13 @@ Before you start, ensure you have the following installed on your machine:
     TWITCH_TOKEN=your_twitch_token
     DISCORD_TOKEN=your_discord_token
     CHANNEL_NAME=your_twitch_channel_name
+    VOICE_LANGUAGE=pt-br
     ```
 
-   Replace `your_twitch_token`, `your_discord_token`, and `your_twitch_channel_name` with your actual Twitch and Discord bot tokens and your desired Twitch channel name.
+   Replace `your_twitch_token`, `your_discord_token`, `your_twitch_channel_name`, and `pt-br` with your actual Twitch and Discord bot tokens, your desired Twitch channel name, and the language code for the voice language.
 
+   You can customize the VOICE_LANGUAGE variable with the language code corresponding to the desired language for the Google Text-to-Speech output. For a list of supported language codes, you can refer to the [gTTS documentation](https://gtts.readthedocs.io/en/latest/module.html#languages-gtts-lang)
+   
 ### Usage
 
 1. **Run the bot:**
