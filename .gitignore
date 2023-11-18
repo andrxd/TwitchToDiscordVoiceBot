@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.env.*
+
+# IDE files
+.idea/
+.vscode/
+
+# Compiled Python files
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
+
+# User-specific files
+*.suo
+*.user
+*.sln.docstates
+
+# Other
+*.sqlite3
+
+# Ignore the output of gtts
+output.mp3
