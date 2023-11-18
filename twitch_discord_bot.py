@@ -15,6 +15,8 @@ load_dotenv()
 TWITCH_TOKEN = os.getenv("TWITCH_TOKEN")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_NAME = os.getenv("CHANNEL_NAME")
+VOICE_LANGUAGE = os.getenv("VOICE_LANGUAGE")
+
 # Set up Discord bot with intents
 intents = discord.Intents.default()
 intents.messages = True
@@ -100,7 +102,7 @@ async def repeat_phrases():
         else:
             author_said = phrase.author.name + " said: " + phrase.content
 
-        tts = gTTS(text=author_said, lang='pt-br')
+        tts = gTTS(text=author_said, lang=VOICE_LANGUAGE)
         tts.save("output.mp3")
 
         if not context_global.voice_client.is_playing():
