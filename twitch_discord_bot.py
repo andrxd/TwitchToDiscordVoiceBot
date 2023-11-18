@@ -14,7 +14,7 @@ load_dotenv()
 # Define constants
 TWITCH_TOKEN = os.getenv("TWITCH_TOKEN")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-
+CHANNEL_NAME = os.getenv("CHANNEL_NAME")
 # Set up Discord bot with intents
 intents = discord.Intents.default()
 intents.messages = True
