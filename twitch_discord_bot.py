@@ -1,3 +1,5 @@
+import time
+
 import discord
 from discord import FFmpegPCMAudio
 from discord.ext import commands
@@ -19,6 +21,7 @@ intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+
 # Set up Twitch bot
 class TwitchBot(commandsTwitch.Bot):
     def __init__(self):
@@ -35,11 +38,13 @@ class TwitchBot(commandsTwitch.Bot):
         await phrase_queue.put(message)
         await self.handle_commands(message)
 
+
 # Initialize global variables
 phrase_queue = asyncio.Queue()
 bot_in_voice_channel = False
 context_global = None
 last_author = None
+
 
 # Discord bot commands
 @bot.command(name='join')
@@ -59,6 +64,7 @@ async def join(ctx):
         else:
             await ctx.send('You must be in a voice channel to use this command.')
 
+
 @bot.command(name='leave')
 async def leave(ctx):
     global bot_in_voice_channel
@@ -71,17 +77,22 @@ async def leave(ctx):
     else:
         await ctx.send('Bot is not in a voice channel.')
 
+
 # Discord bot event
 @bot.event
 async def on_ready():
     print(f'Logged in Discord as {bot.user.name} ({bot.user.id})')
     await start_repeat_task()
 
+
 # Task to repeat phrases
 async def repeat_phrases():
     while True:
         phrase = await phrase_queue.get()
         channel = bot.get_channel(context_global.channel.id)
+
+        while context_global.voice_client.is_playing():
+            time.sleep(1)  # Sleep for 1 second to avoid high CPU usage
 
         print(f'Bot entered voice channel: {channel}')
         if last_author == phrase.author.name:
@@ -95,9 +106,11 @@ async def repeat_phrases():
         if not context_global.voice_client.is_playing():
             context_global.voice_client.play(FFmpegPCMAudio("output.mp3"), after=lambda e: print('done', e))
 
+
 async def start_repeat_task():
     await bot.wait_until_ready()
     bot.loop.create_task(repeat_phrases())
+
 
 # Main function
 async def main():
@@ -109,6 +122,7 @@ async def main():
     except KeyboardInterrupt:
         await bot.close()
         await twitch_bot.close()
+
 
 # Run the main function if the script is executed
 if __name__ == "__main__":
