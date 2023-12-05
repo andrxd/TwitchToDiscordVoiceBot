@@ -16,6 +16,7 @@ TWITCH_TOKEN = os.getenv("TWITCH_TOKEN")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_NAME = os.getenv("CHANNEL_NAME")
 VOICE_LANGUAGE = os.getenv("VOICE_LANGUAGE")
+IGNORED_TWITCH_USERS = os.getenv("IGNORED_TWITCH_USERS", "").split(',')
 
 # Set up Discord bot with intents
 intents = discord.Intents.default()
@@ -27,7 +28,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # Set up Twitch bot
 class TwitchBot(commandsTwitch.Bot):
     def __init__(self):
-        super().__init__(token=TWITCH_TOKEN, prefix='?', initial_channels=['andre_e'])
+        super().__init__(token=TWITCH_TOKEN, prefix='?', initial_channels=['andre_e', 'mrlopesbrazil'])
 
     async def event_ready(self):
         print(f'Logged in Twitch as | {self.nick}')
@@ -46,13 +47,15 @@ phrase_queue = asyncio.Queue()
 bot_in_voice_channel = False
 context_global = None
 last_author = None
+selected_twitch_channel = None
 
 
 # Discord bot commands
 @bot.command(name='join')
-async def join(ctx):
+async def join(ctx, twitch_channel: str):
     global bot_in_voice_channel
     global context_global
+    global selected_twitch_channel
 
     if bot_in_voice_channel:
         await ctx.send('Bot is already in a voice channel.')
@@ -61,6 +64,7 @@ async def join(ctx):
         if voice_channel:
             await voice_channel.connect()
             bot_in_voice_channel = True
+            selected_twitch_channel = twitch_channel
             context_global = ctx
             await ctx.send(f'Bot joined {voice_channel}.')
         else:
@@ -90,23 +94,28 @@ async def on_ready():
 # Task to repeat phrases
 async def repeat_phrases():
     while True:
+
+        global last_author
         phrase = await phrase_queue.get()
         channel = bot.get_channel(context_global.channel.id)
 
         while context_global.voice_client.is_playing():
             time.sleep(1)  # Sleep for 1 second to avoid high CPU usage
 
-        print(f'Bot entered voice channel: {channel}')
-        if last_author == phrase.author.name:
-            author_said = ''
-        else:
-            author_said = phrase.author.name + " said: " + phrase.content
+        if not (phrase.author.name == selected_twitch_channel or IGNORED_TWITCH_USERS.__contains__(phrase.author.name)) and phrase.channel.name == selected_twitch_channel :
 
-        tts = gTTS(text=author_said, lang=VOICE_LANGUAGE)
-        tts.save("output.mp3")
+            print(f'Bot entered voice channel: {channel}')
+            if last_author == phrase.author.name:
+                author_said = phrase.content
+            else:
+                last_author = phrase.author.name
+                author_said = phrase.author.name + " disse: " + phrase.content
 
-        if not context_global.voice_client.is_playing():
-            context_global.voice_client.play(FFmpegPCMAudio("output.mp3"), after=lambda e: print('done', e))
+            tts = gTTS(text=author_said, lang=VOICE_LANGUAGE)
+            tts.save("output.mp3")
+
+            if not context_global.voice_client.is_playing():
+                context_global.voice_client.play(FFmpegPCMAudio("output.mp3"), after=lambda e: print('done', e))
 
 
 async def start_repeat_task():
