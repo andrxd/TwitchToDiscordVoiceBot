@@ -1,7 +1,7 @@
 import time
 
 import discord
-from discord import FFmpegPCMAudio
+from discord import FFmpegPCMAudio,app_commands
 from discord.ext import commands
 import asyncio
 from gtts import gTTS
@@ -10,7 +10,17 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+import logging
+import sys
 
+root = logging.getLogger()
+root.setLevel(logging.DEBUG)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+root.addHandler(handler)
 # Define constants
 TWITCH_TOKEN = os.getenv("TWITCH_TOKEN")
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -51,27 +61,28 @@ selected_twitch_channel = None
 
 
 # Discord bot commands
-@bot.command(name='join')
-async def join(ctx, twitch_channel: str):
+#@bot.command(name='join')
+@bot.tree.command(name='join')
+async def join(interaction: discord.Interaction, twitch_channel: str):
     global bot_in_voice_channel
     global context_global
     global selected_twitch_channel
 
     if bot_in_voice_channel:
-        await ctx.send('Bot is already in a voice channel.')
+        await interaction.response.send_message('Bot is already in a voice channel.')
     else:
-        voice_channel = ctx.author.voice.channel
+        voice_channel = interaction.user.voice.channel
         if voice_channel:
             await voice_channel.connect()
             bot_in_voice_channel = True
             selected_twitch_channel = twitch_channel
-            context_global = ctx
-            await ctx.send(f'Bot joined {voice_channel}.')
+            context_global = interaction
+            await interaction.response.send_message(f'Bot joined {voice_channel}.')
         else:
-            await ctx.send('You must be in a voice channel to use this command.')
+            await interaction.response.send_message('You must be in a voice channel to use this command.')
 
 
-@bot.command(name='leave')
+@bot.tree.command(name='leave')
 async def leave(ctx):
     global bot_in_voice_channel
 
@@ -87,6 +98,11 @@ async def leave(ctx):
 # Discord bot event
 @bot.event
 async def on_ready():
+    try:
+        synced = await bot.tree.sync()
+    except Exception as e:
+        print(e)
+
     print(f'Logged in Discord as {bot.user.name} ({bot.user.id})')
     await start_repeat_task()
 
@@ -99,7 +115,7 @@ async def repeat_phrases():
         phrase = await phrase_queue.get()
         channel = bot.get_channel(context_global.channel.id)
 
-        while context_global.voice_client.is_playing():
+        while context_global.client.voice_clients[0].is_playing():
             time.sleep(1)  # Sleep for 1 second to avoid high CPU usage
 
         if not (phrase.author.name == selected_twitch_channel or IGNORED_TWITCH_USERS.__contains__(phrase.author.name)) and phrase.channel.name == selected_twitch_channel :
@@ -114,8 +130,8 @@ async def repeat_phrases():
             tts = gTTS(text=author_said, lang=VOICE_LANGUAGE)
             tts.save("output.mp3")
 
-            if not context_global.voice_client.is_playing():
-                context_global.voice_client.play(FFmpegPCMAudio("output.mp3"), after=lambda e: print('done', e))
+            if not context_global.client.voice_clients[0].is_playing():
+                context_global.client.voice_clients[0].play(FFmpegPCMAudio("output.mp3"), after=lambda e: print('done', e))
 
 
 async def start_repeat_task():
